@@ -25,7 +25,7 @@
     {
       "binding": "DB",
       "database_name": "curiosity-platform-db",
-      "database_id": "<configure-me>"
+      "database_id": "07c7b78e-5852-485d-bf7c-7ec80c11f0df"
     }
   ],
 
@@ -34,7 +34,7 @@
   "kv_namespaces": [
     {
       "binding": "SESSIONS_KV",
-      "id": "<configure-me>"
+      "id": "d1bf63d1e3b946cb9915a576c377caa3"
     }
   ],
 
