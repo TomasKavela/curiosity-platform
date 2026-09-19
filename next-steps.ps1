@@ -1,4 +1,4 @@
-# next-steps.ps1
+﻿# next-steps.ps1
 # Corre isto DE DENTRO da pasta curiosity-platform (depois do setup.ps1).
 # Vai abrir o browser para autenticares com a Cloudflare e depois cria os
 # recursos (D1 + KV) automaticamente, editando wrangler.jsonc por ti.
