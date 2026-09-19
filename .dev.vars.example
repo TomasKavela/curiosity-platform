@@ -1,0 +1,6 @@
+# Copiar para .dev.vars (nunca commitar .dev.vars real) para desenvolvimento local.
+# A maioria dos bindings (DB, SESSIONS_KV, AI) não precisa de segredos aqui —
+# são resolvidos por wrangler.jsonc + `wrangler dev`.
+# Este ficheiro fica pronto para futuras variáveis sensíveis (ex.: chave de outro AIProvider).
+
+# CLOUDFLARE_API_TOKEN=<configure-me>

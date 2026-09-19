@@ -1,0 +1,48 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "curiosity-platform",
+  "compatibility_date": "2026-09-19",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "./src/worker/index.ts",
+
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+
+  // Workers AI — sem necessidade de API key, autenticação é o próprio binding.
+  // "remote: true" é obrigatório: não existe emulação local para Workers AI,
+  // a chamada visa sempre a API real da Cloudflare (usa `wrangler login`).
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  },
+
+  // Base de dados relacional (User, Profile, Exploration, Message, Memory, Idea, Notification).
+  // <configure-me>: crie a base com `npx wrangler d1 create curiosity-platform-db`
+  // e substitua database_id pelo ID devolvido.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "curiosity-platform-db",
+      "database_id": "<configure-me>"
+    }
+  ],
+
+  // Sessões, rate limiting, cache de resumos.
+  // <configure-me>: crie com `npx wrangler kv namespace create SESSIONS_KV`
+  "kv_namespaces": [
+    {
+      "binding": "SESSIONS_KV",
+      "id": "<configure-me>"
+    }
+  ],
+
+  "observability": {
+    "enabled": true
+  },
+
+  "vars": {
+    "ENVIRONMENT": "development"
+  }
+}
