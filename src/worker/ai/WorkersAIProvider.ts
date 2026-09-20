@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   AIProvider,
   ExplorationSummary,
   GeneratedQuestion,
@@ -6,11 +6,20 @@ import type {
   StructuredPrompt,
 } from "./AIProvider";
 
-// Modelo atual no catálogo Workers AI para chat multilingue com bom custo/desempenho.
-// Confirmar periodicamente em `npx wrangler ai models list` — o catálogo muda.
-const CHAT_MODEL = "@cf/qwen/qwen3-30b-a3b-fp8";
+const CHAT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
-/** Tenta extrair o primeiro bloco JSON válido de uma resposta de modelo. */
+function extractResponseText(response: unknown): string {
+  if (typeof response === "string") return response;
+  if (response && typeof response === "object") {
+    const obj = response as Record<string, unknown>;
+    if (typeof obj.response === "string") return obj.response;
+    if (Array.isArray(obj.tool_calls) && obj.tool_calls.length > 0) {
+      return JSON.stringify(obj.tool_calls);
+    }
+  }
+  return "";
+}
+
 function extractJson<T>(raw: string, fallback: T): T {
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) return fallback;
@@ -31,7 +40,7 @@ export class WorkersAIProvider implements AIProvider {
       temperature: prompt.temperature ?? 0.8,
     });
 
-    const text = (response as { response?: string }).response ?? "";
+    const text = extractResponseText(response);
     return { text: text.trim() };
   }
 
@@ -51,7 +60,7 @@ export class WorkersAIProvider implements AIProvider {
       temperature: 0.2,
     });
 
-    const text = (response as { response?: string }).response ?? "";
+    const text = extractResponseText(response);
     return extractJson<ProfileSignals>(text, {
       interests: [],
       hobbies: [],
@@ -78,7 +87,7 @@ export class WorkersAIProvider implements AIProvider {
       temperature: 0.3,
     });
 
-    const text = (response as { response?: string }).response ?? "";
+    const text = extractResponseText(response);
     return extractJson<ExplorationSummary>(text, { summary: "", tags: [] });
   }
 }
