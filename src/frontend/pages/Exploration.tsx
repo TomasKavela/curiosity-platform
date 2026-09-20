@@ -1,10 +1,37 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { api, type ExplorationMessage } from "../lib/api";
+import { api, type Depth, type ExplorationMessage } from "../lib/api";
 import { AnswerInput } from "../components/exploration/AnswerInput";
-import { QuestionDisplay, AnswerEcho } from "../components/exploration/QuestionDisplay";
+import { MomentDisplay, AnswerEcho } from "../components/exploration/QuestionDisplay";
 import { Spark } from "../components/ui/Spark";
 import { Button } from "../components/ui/Button";
+
+const DEPTH_OPTIONS: Array<{ value: Depth; label: string }> = [
+  { value: "explorar", label: "Explorar" },
+  { value: "aprofundar", label: "Aprofundar" },
+  { value: "investigar", label: "Investigar" },
+  { value: "criar", label: "Criar" },
+];
+
+function DepthSelector({ value, onChange }: { value: Depth; onChange: (d: Depth) => void }) {
+  return (
+    <div className="mb-8 flex flex-wrap gap-2">
+      {DEPTH_OPTIONS.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+            value === opt.value
+              ? "border-spark bg-spark/10 text-spark"
+              : "border-ink-line text-paper-faint hover:text-paper-dim"
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function Exploration() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +40,7 @@ export default function Exploration() {
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [depth, setDepth] = useState<Depth>("explorar");
 
   useEffect(() => {
     if (!id) return;
@@ -28,11 +56,11 @@ export default function Exploration() {
     setSending(true);
     setMessages((m) => [...m, { role: "answer", content: value, created_at: new Date().toISOString() }]);
 
-    const res = await api.explorations.sendMessage(id, value);
+    const res = await api.explorations.sendMessage(id, value, depth);
     setSending(false);
     setMessages((m) => [
       ...m,
-      { role: "question", content: res.question, created_at: new Date().toISOString() },
+      { role: "question", strategy: res.strategyUsed, content: res.question, created_at: new Date().toISOString() },
     ]);
   }
 
@@ -54,12 +82,13 @@ export default function Exploration() {
 
   return (
     <div className="mx-auto min-h-screen max-w-prose px-6 py-16">
-      <p className="mb-8 text-sm text-paper-faint">{title}</p>
+      <p className="mb-2 text-sm text-paper-faint">{title}</p>
+      <DepthSelector value={depth} onChange={setDepth} />
 
       <div className="flex flex-col gap-8">
         {messages.map((m, i) =>
           m.role === "question" ? (
-            <QuestionDisplay key={i} text={m.content} />
+            <MomentDisplay key={i} text={m.content} strategy={m.strategy} />
           ) : m.role === "idea" ? (
             <p key={i} className="font-display text-xl italic text-bloom">"{m.content}"</p>
           ) : (
@@ -69,7 +98,7 @@ export default function Exploration() {
       </div>
 
       <div className="mt-10 flex flex-col gap-4">
-        {sending ? <Spark label="a pensar na próxima pergunta..." /> : <AnswerInput onSubmit={handleAnswer} />}
+        {sending ? <Spark label="a pensar..." /> : <AnswerInput onSubmit={handleAnswer} />}
         <div>
           <Button variant="ghost" onClick={handleIdea}>
             Tive uma ideia

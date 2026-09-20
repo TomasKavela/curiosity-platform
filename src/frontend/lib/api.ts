@@ -1,4 +1,4 @@
-const BASE = "/api";
+﻿const BASE = "/api";
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
@@ -14,6 +14,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   return res.json() as Promise<T>;
 }
+
+export type Depth = "explorar" | "aprofundar" | "investigar" | "criar";
 
 export interface ExplorationSummaryItem {
   id: string;
@@ -67,16 +69,16 @@ export const api = {
       request<{ exploration: ExplorationSummaryItem; messages: ExplorationMessage[] }>(
         `/explorations/${id}`
       ),
-    create: (firstMessage: string, origin: "guided" | "spontaneous" = "guided") =>
-      request<{ explorationId: string; question: string }>("/explorations", {
-        method: "POST",
-        body: JSON.stringify({ firstMessage, origin }),
-      }),
-    sendMessage: (id: string, content: string) =>
-      request<{ question: string }>(`/explorations/${id}/messages`, {
-        method: "POST",
-        body: JSON.stringify({ content }),
-      }),
+    create: (firstMessage: string, origin: "guided" | "spontaneous" = "guided", depth: Depth = "explorar") =>
+      request<{ explorationId: string; question: string; strategyUsed: string; momentType: string }>(
+        "/explorations",
+        { method: "POST", body: JSON.stringify({ firstMessage, origin, depth }) }
+      ),
+    sendMessage: (id: string, content: string, depth: Depth = "explorar") =>
+      request<{ question: string; strategyUsed: string; momentType: string }>(
+        `/explorations/${id}/messages`,
+        { method: "POST", body: JSON.stringify({ content, depth }) }
+      ),
   },
 
   ideas: {

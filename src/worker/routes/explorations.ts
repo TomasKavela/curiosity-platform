@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+﻿import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import type { AuthedVariables } from "../middleware/auth";
 import { aiRateLimit } from "../middleware/rateLimit";
@@ -43,7 +43,7 @@ explorationsRoute.get("/:id", async (c) => {
 
 explorationsRoute.post("/", zValidator("json", createExplorationSchema), aiRateLimit, async (c) => {
   const userId = c.get("userId");
-  const { firstMessage, origin } = c.req.valid("json");
+  const { firstMessage, origin, depth } = c.req.valid("json");
 
   const explorationId = crypto.randomUUID();
   const title = firstMessage.slice(0, 80);
@@ -60,6 +60,7 @@ explorationsRoute.post("/", zValidator("json", createExplorationSchema), aiRateL
   const ai = new WorkersAIProvider(c.env.AI);
   const result = await runCuriosityEngine({ db: c.env.DB, ai }, userId, explorationId, {
     isSpontaneousIdea: origin === "spontaneous",
+    depth,
   });
 
   await c.env.DB.prepare(
@@ -68,7 +69,15 @@ explorationsRoute.post("/", zValidator("json", createExplorationSchema), aiRateL
     .bind(crypto.randomUUID(), explorationId, result.strategyUsed, result.question)
     .run();
 
-  return c.json({ explorationId, question: result.question, strategyUsed: result.strategyUsed }, 201);
+  return c.json(
+    {
+      explorationId,
+      question: result.question,
+      strategyUsed: result.strategyUsed,
+      momentType: result.momentType,
+    },
+    201
+  );
 });
 
 explorationsRoute.post(
@@ -78,7 +87,7 @@ explorationsRoute.post(
   async (c) => {
     const userId = c.get("userId");
     const explorationId = c.req.param("id");
-    const { content } = c.req.valid("json");
+    const { content, depth } = c.req.valid("json");
 
     const owned = await c.env.DB.prepare(
       `SELECT id FROM explorations WHERE id = ? AND user_id = ?`
@@ -95,7 +104,7 @@ explorationsRoute.post(
       .run();
 
     const ai = new WorkersAIProvider(c.env.AI);
-    const result = await runCuriosityEngine({ db: c.env.DB, ai }, userId, explorationId);
+    const result = await runCuriosityEngine({ db: c.env.DB, ai }, userId, explorationId, { depth });
 
     await c.env.DB.batch([
       c.env.DB.prepare(
@@ -106,6 +115,10 @@ explorationsRoute.post(
       ),
     ]);
 
-    return c.json({ question: result.question, strategyUsed: result.strategyUsed });
+    return c.json({
+      question: result.question,
+      strategyUsed: result.strategyUsed,
+      momentType: result.momentType,
+    });
   }
 );

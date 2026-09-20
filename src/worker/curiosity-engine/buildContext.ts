@@ -1,25 +1,18 @@
-import type { EngineContext, ProfileSnapshot, RelevantMemory, ThreadMessage } from "./types";
+﻿import type { Depth, EngineContext, ProfileSnapshot, RelevantMemory, ThreadMessage } from "./types";
 
-const ACTIVE_THREAD_WINDOW = 12; // últimas N mensagens enviadas ao modelo sem sumarização
+const ACTIVE_THREAD_WINDOW = 12;
 const MAX_RELEVANT_MEMORIES = 5;
 
 interface BuildContextDeps {
   db: D1Database;
 }
 
-/**
- * Recolhe tudo o que o Curiosity Engine precisa para decidir a próxima pergunta:
- * perfil confirmado, a conversa em curso, e memórias antigas relacionadas por tag.
- *
- * Deliberadamente NÃO faz busca vetorial (ver ARCHITECTURE.md — Vectorize fica
- * fora do MVP). A relação é por sobreposição simples de tags com os interesses
- * do perfil e com o conteúdo textual da thread ativa.
- */
 export async function buildContext(
   deps: BuildContextDeps,
   userId: string,
   explorationId: string,
-  isSpontaneousIdea: boolean
+  isSpontaneousIdea: boolean,
+  depth: Depth = "explorar"
 ): Promise<EngineContext> {
   const { db } = deps;
 
@@ -48,13 +41,13 @@ export async function buildContext(
 
   const threadRows = await db
     .prepare(
-      `SELECT role, content FROM exploration_messages
+      `SELECT role, strategy, content FROM exploration_messages
        WHERE exploration_id = ?
        ORDER BY created_at DESC
        LIMIT ?`
     )
     .bind(explorationId, ACTIVE_THREAD_WINDOW)
-    .all<{ role: ThreadMessage["role"]; content: string }>();
+    .all<{ role: ThreadMessage["role"]; strategy: string | null; content: string }>();
 
   const activeThread = (threadRows.results ?? []).reverse();
 
@@ -66,7 +59,6 @@ export async function buildContext(
 
   let relevantMemories: RelevantMemory[] = [];
   if (candidateTags.length > 0) {
-    // LIKE simples por tag — suficiente para o volume esperado no MVP (ver decisão em DECISIONS.md).
     const likeClauses = candidateTags.map(() => `tags_json LIKE ?`).join(" OR ");
     const likeParams = candidateTags.map((t) => `%${t}%`);
 
@@ -86,5 +78,5 @@ export async function buildContext(
     }));
   }
 
-  return { profile, activeThread, relevantMemories, isSpontaneousIdea };
+  return { profile, activeThread, relevantMemories, isSpontaneousIdea, depth };
 }

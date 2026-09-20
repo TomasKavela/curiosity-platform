@@ -1,9 +1,14 @@
-import type { EngineContext } from "./types";
+﻿import type { EngineContext, MomentType } from "./types";
 
-const MAX_QUESTION_LENGTH = 260; // caracteres — queremos pergunta, não explicação
-const MIN_QUESTION_LENGTH = 8;
+const MIN_LENGTH = 8;
+const MAX_LENGTH: Record<MomentType, number> = {
+  question: 260,
+  reflection: 200,
+  insight: 320,
+  simulation: 320,
+  experiment: 300,
+};
 
-/** Similaridade grosseira por sobreposição de palavras — suficiente para detetar repetição óbvia. */
 function wordOverlap(a: string, b: string): number {
   const wordsA = new Set(a.toLowerCase().split(/\W+/).filter(Boolean));
   const wordsB = new Set(b.toLowerCase().split(/\W+/).filter(Boolean));
@@ -18,31 +23,37 @@ export interface QualityResult {
   flags: string[];
 }
 
-export function qualityCheck(candidate: string, context: EngineContext): QualityResult {
+export function qualityCheck(
+  candidate: string,
+  context: EngineContext,
+  momentType: MomentType = "question"
+): QualityResult {
   const flags: string[] = [];
   const trimmed = candidate.trim();
+  const maxLength = MAX_LENGTH[momentType];
 
-  if (trimmed.length < MIN_QUESTION_LENGTH) flags.push("demasiado curta");
-  if (trimmed.length > MAX_QUESTION_LENGTH) flags.push("demasiado longa — parece explicação, não pergunta");
+  if (trimmed.length < MIN_LENGTH) flags.push("demasiado curta");
+  if (trimmed.length > maxLength) flags.push("demasiado longa para este tipo de turno");
 
-  const priorQuestions = context.activeThread.filter((m) => m.role === "question");
-  for (const prior of priorQuestions) {
+  const priorTurns = context.activeThread.filter((m) => m.role === "question");
+  for (const prior of priorTurns) {
     if (wordOverlap(trimmed, prior.content) > 0.7) {
-      flags.push("possível repetição de pergunta anterior");
+      flags.push("possível repetição de um turno anterior");
       break;
     }
   }
 
-  // Heurística de "entrega a resposta": muitas frases declarativas antes do "?"
-  // costuma indicar que o modelo explicou em vez de perguntar.
-  const beforeQuestionMark = trimmed.split("?")[0] ?? trimmed;
-  const declarativeSentences = beforeQuestionMark.split(/[.!]/).filter((s) => s.trim().length > 15);
-  if (declarativeSentences.length > 2) flags.push("pode estar a entregar a resposta em vez de perguntar");
+  if (momentType === "question") {
+    const beforeQuestionMark = trimmed.split("?")[0] ?? trimmed;
+    const declarativeSentences = beforeQuestionMark.split(/[.!]/).filter((s) => s.trim().length > 15);
+    if (declarativeSentences.length > 2) flags.push("pode estar a entregar a resposta em vez de perguntar");
+  }
 
   const passed =
-    trimmed.length >= MIN_QUESTION_LENGTH &&
-    trimmed.length <= MAX_QUESTION_LENGTH &&
-    !flags.includes("possível repetição de pergunta anterior");
+    trimmed.length >= MIN_LENGTH &&
+    trimmed.length <= maxLength &&
+    !flags.includes("possível repetição de um turno anterior") &&
+    !flags.includes("pode estar a entregar a resposta em vez de perguntar");
 
   return { passed, flags };
 }

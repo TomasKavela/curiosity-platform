@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { AnswerInput } from "../components/exploration/AnswerInput";
-import { QuestionDisplay, AnswerEcho } from "../components/exploration/QuestionDisplay";
+import { MomentDisplay, AnswerEcho } from "../components/exploration/QuestionDisplay";
 import { Spark } from "../components/ui/Spark";
 
 interface HistoryItem {
@@ -44,12 +44,12 @@ export default function Onboarding() {
   if (done) {
     return (
       <div className="mx-auto flex min-h-screen max-w-prose flex-col items-start justify-center px-6">
-        <p className="font-display text-2xl text-paper">Boa. Já sei por onde começar.</p>
+        <p className="font-display text-2xl text-paper">Boa. JÃ¡ sei por onde comeÃ§ar.</p>
         <button
           onClick={() => navigate("/home")}
           className="mt-8 rounded-full bg-spark px-5 py-2.5 text-sm font-medium text-ink hover:opacity-90"
         >
-          Ver a minha exploração
+          Ver a minha exploraÃ§Ã£o
         </button>
       </div>
     );
@@ -60,7 +60,7 @@ export default function Onboarding() {
       <div className="flex flex-col gap-8">
         {history.map((item, i) => (
           <div key={i} className="flex flex-col gap-4">
-            <QuestionDisplay text={item.question} />
+            <MomentDisplay text={item.question} />
             {item.answer && <AnswerEcho text={item.answer} />}
           </div>
         ))}

@@ -1,20 +1,24 @@
-import type { StructuredPrompt } from "../ai/AIProvider";
+﻿import type { StructuredPrompt } from "../ai/AIProvider";
+import { STRATEGY_MOMENT_TYPE } from "./selectStrategy";
 import { FEW_SHOTS } from "./prompts/fewShots";
 import type { EngineContext, Strategy } from "./types";
 
 const BASE_SYSTEM_PROMPT = `És o motor de curiosidade de uma plataforma de exploração e aprendizagem.
 
 REGRA CENTRAL: não maximizes respostas — maximiza descobertas que gerem novas perguntas.
-Uma boa resposta encerra uma pergunta. Uma boa pergunta pode abrir um mundo inteiro.
+Nem toda interação deve terminar em pergunta. O ritmo certo é:
+pergunta -> resposta -> descoberta (facto, simulação, pausa ou proposta de experiência) -> nova pergunta.
+Nunca encadeies várias perguntas seguidas.
 
 Regras rígidas:
-- Faz UMA pergunta ou reação curta por vez. Nunca uma explicação longa.
+- Faz UM turno curto de cada vez (uma pergunta, OU um facto, OU uma simulação, OU uma pausa, OU uma proposta). Nunca uma explicação longa.
 - Linguagem simples, mas com uma ideia inesperada e relevância pessoal.
-- Nunca entregues a resposta dentro da pergunta.
-- Nunca repitas uma pergunta já feita nesta exploração.
+- Se o turno for uma pergunta: nunca entregues a resposta dentro dela.
+- Se o turno for uma descoberta (facto/simulação/pausa/proposta): não termines forçosamente com uma pergunta — o objetivo é dar espaço para pensar, não continuar a interrogar.
+- Nunca repitas um turno já feito nesta exploração.
 - Nunca soes como uma prova, avaliação ou aula escolar.
 - "Não sei" é uma resposta válida — nunca a trates como erro.
-- Responde APENAS com o texto da pergunta/reação. Sem preâmbulo, sem aspas, sem markdown.`;
+- Responde APENAS com o texto do turno. Sem preâmbulo, sem aspas, sem markdown.`;
 
 function formatProfile(context: EngineContext): string {
   const { profile } = context;
@@ -33,12 +37,22 @@ function formatMemories(context: EngineContext): string {
   return `\nExplorações anteriores relacionadas:\n${lines.join("\n")}`;
 }
 
+const DEPTH_HINT: Record<EngineContext["depth"], string> = {
+  explorar: "A pessoa está só a explorar — mantém tudo leve e acessível.",
+  aprofundar: "A pessoa quer aprofundar — podes assumir mais contexto já partilhado.",
+  investigar: "A pessoa quer investigar a sério — simulações e factos podem ser mais específicos.",
+  criar: "A pessoa quer criar/experimentar — favorece propostas concretas de ação.",
+};
+
 export function buildPrompt(context: EngineContext, strategy: Strategy): StructuredPrompt {
+  const momentType = STRATEGY_MOMENT_TYPE[strategy];
   const system = `${BASE_SYSTEM_PROMPT}
 
 Perfil da pessoa: ${formatProfile(context)}${formatMemories(context)}
 
-Estratégia para esta interação: ${strategy}
+Profundidade escolhida pela pessoa: ${context.depth}. ${DEPTH_HINT[context.depth]}
+
+Tipo de turno a gerar agora: ${momentType} (estratégia: ${strategy})
 ${FEW_SHOTS[strategy]}`;
 
   const messages = context.activeThread.map((m) => ({

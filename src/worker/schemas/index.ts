@@ -1,12 +1,16 @@
-import { z } from "zod";
+﻿import { z } from "zod";
+
+export const depthSchema = z.enum(["explorar", "aprofundar", "investigar", "criar"]).default("explorar");
 
 export const createExplorationSchema = z.object({
   firstMessage: z.string().min(1).max(2000),
   origin: z.enum(["guided", "spontaneous"]).default("guided"),
+  depth: depthSchema,
 });
 
 export const postMessageSchema = z.object({
   content: z.string().min(1).max(2000),
+  depth: depthSchema,
 });
 
 export const postIdeaSchema = z.object({

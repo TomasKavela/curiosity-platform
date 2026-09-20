@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "curiosity-platform",
   "compatibility_date": "2026-09-19",
@@ -6,12 +6,12 @@
   "main": "./src/worker/index.ts",
 
   "assets": {
-    "directory": "./dist",
+    "directory": "./dist/client",
     "not_found_handling": "single-page-application"
   },
 
-  // Workers AI — sem necessidade de API key, autenticação é o próprio binding.
-  // "remote: true" é obrigatório: não existe emulação local para Workers AI,
+  // Workers AI â€” sem necessidade de API key, autenticaÃ§Ã£o Ã© o prÃ³prio binding.
+  // "remote: true" Ã© obrigatÃ³rio: nÃ£o existe emulaÃ§Ã£o local para Workers AI,
   // a chamada visa sempre a API real da Cloudflare (usa `wrangler login`).
   "ai": {
     "binding": "AI",
@@ -29,7 +29,7 @@
     }
   ],
 
-  // Sessões, rate limiting, cache de resumos.
+  // SessÃµes, rate limiting, cache de resumos.
   // <configure-me>: crie com `npx wrangler kv namespace create SESSIONS_KV`
   "kv_namespaces": [
     {

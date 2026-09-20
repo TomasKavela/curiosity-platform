@@ -1,10 +1,17 @@
-export type Strategy =
+﻿export type Strategy =
   | "PROBE_DEEPER"
   | "CONNECT"
   | "CHALLENGE"
   | "SUGGEST_EXPERIMENT"
   | "SIMPLIFY"
-  | "ACKNOWLEDGE_IDEA";
+  | "ACKNOWLEDGE_IDEA"
+  | "SHARE_INSIGHT"
+  | "PROPOSE_SIMULATION"
+  | "INVITE_REFLECTION";
+
+export type MomentType = "question" | "insight" | "simulation" | "reflection" | "experiment";
+
+export type Depth = "explorar" | "aprofundar" | "investigar" | "criar";
 
 export interface ProfileSnapshot {
   displayName: string | null;
@@ -17,6 +24,7 @@ export interface ProfileSnapshot {
 export interface ThreadMessage {
   role: "question" | "answer" | "idea" | "system_note";
   content: string;
+  strategy?: string | null;
 }
 
 export interface RelevantMemory {
@@ -26,13 +34,15 @@ export interface RelevantMemory {
 
 export interface EngineContext {
   profile: ProfileSnapshot;
-  activeThread: ThreadMessage[]; // últimas N mensagens da exploração atual
+  activeThread: ThreadMessage[];
   relevantMemories: RelevantMemory[];
   isSpontaneousIdea: boolean;
+  depth: Depth;
 }
 
 export interface EngineResult {
   question: string;
   strategyUsed: Strategy;
-  qualityFlags: string[]; // avisos não-bloqueantes (ex.: "possível repetição")
+  momentType: MomentType;
+  qualityFlags: string[];
 }
